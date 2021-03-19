@@ -97,7 +97,21 @@ public class SeqScan implements DbIterator {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return Database.getCatalog().getDbFile(tableid).getTupleDesc();
+
+        //return Database.getCatalog().getDbFile(tableid).getTupleDesc();
+
+        TupleDesc oldtd = Database.getCatalog().getDbFile(tableid).getTupleDesc();
+        Iterator<TupleDesc.TDItem> it = oldtd.iterator();
+        Type[] types = new Type[oldtd.numFields()];
+        String[] names = new String[oldtd.numFields()];
+        int index = 0;
+        while (it.hasNext()) {
+            TupleDesc.TDItem item = it.next();
+            types[index] = item.fieldType;
+            names[index] = tableAlias + "." + item.fieldName;
+            index++;
+        }
+        return new TupleDesc(types, names);
     }
 
     public boolean hasNext() throws TransactionAbortedException, DbException {
