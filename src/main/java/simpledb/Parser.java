@@ -584,6 +584,7 @@ public class Parser {
             "insert", "delete", "values", "into" };
 
     public static void main(String argv[]) throws IOException {
+        argv = new String[] {"F:\\db\\simpledb\\dblp_data\\dblp_simpledb.schema"};
 
         if (argv.length < 1 || argv.length > 4) {
             System.out.println("Invalid number of arguments.\n" + usage);
