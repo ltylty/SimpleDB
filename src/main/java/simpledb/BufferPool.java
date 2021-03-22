@@ -58,6 +58,32 @@ public class BufferPool {
         if (page == null) {
             DbFile file = Database.getCatalog().getDbFile(pid.getTableId());
             page = file.readPage(pid);
+
+            /* my code for proj2 */
+            if (pagesCacheMap.size() >= numPages) {
+                /* random evictPage */
+                boolean hasDirtyPage = false;
+                PageId removeId = null;
+                for (PageId pageId : pagesCacheMap.keySet()) {
+                    Page p = pagesCacheMap.get(pageId);
+                    removeId = pageId;
+                    if (p.isDirty() != null) {
+                        hasDirtyPage = true;
+                        try {
+                            flushPage(pageId);
+                        } catch(IOException e) {
+                            e.printStackTrace();
+                        }
+                        pagesCacheMap.remove(pageId);
+                        break;
+                    }
+                }
+                if (!hasDirtyPage) {
+                    pagesCacheMap.remove(removeId);
+                }
+            }
+            /* my code for proj2 */
+
             pagesCacheMap.put(pid, page);
         }
         return page;
