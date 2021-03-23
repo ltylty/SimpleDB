@@ -81,6 +81,7 @@ public class Join extends Operator {
     	child2.open();
     	super.open();
 
+        //joinResults = nestedLoopJoin();
         //joinResults = blockNestedLoopJoin();
         joinResults = dbnlSortedJoin();
         joinResults.open();
@@ -157,7 +158,6 @@ public class Join extends Operator {
 
     private TupleIterator nestedLoopJoin() throws DbException, TransactionAbortedException {
         LinkedList<Tuple> tuples = new LinkedList<>();
-        int length1 = child1.getTupleDesc().numFields();
         child1.rewind();
         while (child1.hasNext()) {
             Tuple left = child1.next();
@@ -175,7 +175,7 @@ public class Join extends Operator {
     }
 
     private TupleIterator blockNestedLoopJoin() throws DbException, TransactionAbortedException {
-        List<Tuple> tuples = new ArrayList<>();
+        List<Tuple> tuples = new LinkedList<>();
         int blockSize = blockMemory / child1.getTupleDesc().getSize();//131072是MySql中该算法的默认缓冲区大小
         Tuple[] cacheBlock = new Tuple[blockSize];
         int index = 0;
@@ -215,93 +215,6 @@ public class Join extends Operator {
         return new TupleIterator(getTupleDesc(), tuples);
     }
 
-    private TupleIterator doubleBlockNestedLoopJoin() throws DbException, TransactionAbortedException {
-        LinkedList<Tuple> tuples = new LinkedList<>();
-        int blockSize1 = blockMemory / child1.getTupleDesc().getSize();//131072是MySql中该算法的默认缓冲区大小
-        int blockSize2 = blockMemory / child2.getTupleDesc().getSize();
-        Tuple[] leftCacheBlock = new Tuple[blockSize1];
-        Tuple[] rightCacheBlock = new Tuple[blockSize2];
-        int index1 = 0;
-        int index2 = 0;
-        int length1 = child1.getTupleDesc().numFields();
-        child1.rewind();
-        while (child1.hasNext()) {
-            Tuple left = child1.next();
-            leftCacheBlock[index1++] = left;//将左表的tuple放入左缓存区
-            if (index1 >= leftCacheBlock.length) {//如果左表缓冲区满了，就先处理缓存中的tuple
-                //以下为使用另一个数组作为缓存将右表分块处理的过程，就是缓存满了就join一次，最后处理在缓存中剩下的
-                //即下面的for里面的并列的while和if块是对右表的处理过程，可以看作一起来理解
-                child2.rewind();//每处理完一整个左缓存区的tuples才rewind一次右表
-                while (child2.hasNext()) {
-                    Tuple right = child2.next();
-                    rightCacheBlock[index2++] = right;//将右表的tuple放入缓存
-                    if (index2 >= rightCacheBlock.length) {//如果右缓冲区满了，就先处理缓存中的tuple
-                        for (Tuple cacheRight : rightCacheBlock) {
-                            for (Tuple cacheLeft : leftCacheBlock) {
-                                if (p.filter(cacheLeft, cacheRight)) {//如果符合条件就合并来自两个表的tuple作为一条结果
-                                    Tuple result = mergeTuples(cacheLeft, cacheRight);
-                                    tuples.add(result);
-                                }
-                            }
-                        }
-                        Arrays.fill(rightCacheBlock, null);//清空右缓存区，以供继续遍历右表
-                        index2 = 0;
-                    }
-                }
-                if (index2 > 0 && index2 < rightCacheBlock.length) {//处理缓冲区中剩下的tuple
-                    for (Tuple cacheRight : rightCacheBlock) {
-                        if (cacheRight == null) break;
-                        for (Tuple cacheLeft : leftCacheBlock) {
-                            //如果符合条件就合并来自两个表的tuple作为一条结果，加上为null的判断是因为此时cache没有满，最后有null值
-                            if (p.filter(cacheLeft, cacheRight)) {
-                                Tuple result = mergeTuples(cacheLeft, cacheRight);
-                                tuples.add(result);
-                            }
-                        }
-                    }
-                    Arrays.fill(rightCacheBlock, null);//清空右缓存区，以供下一个左缓存区对右缓存区的遍历
-                    index2 = 0;
-                }
-                Arrays.fill(leftCacheBlock, null);//清空左缓存区，以供继续遍历左表
-                index1 = 0;
-            }
-        }
-        if (index1 > 0 && index1 < leftCacheBlock.length) {//处理缓冲区中剩下的tuple
-            child2.rewind();
-            while (child2.hasNext()) {
-                Tuple right = child2.next();
-                rightCacheBlock[index2++] = right;//将右表的tuple放入缓存
-                if (index2 >= rightCacheBlock.length) {//如果缓冲区满了，就先处理缓存中的tuple
-                    for (Tuple cacheRight : rightCacheBlock) {
-                        for (Tuple cacheLeft : leftCacheBlock) {
-                            if (cacheLeft == null) break;
-                            if (p.filter(cacheLeft, cacheRight)) {//如果符合条件就合并来自两个表的tuple作为一条结果
-                                Tuple result = mergeTuples(cacheLeft, cacheRight);
-                                tuples.add(result);
-                            }
-                        }
-                    }
-                    Arrays.fill(rightCacheBlock, null);//清空右缓存区，以供继续遍历右表
-                    index2 = 0;
-                }
-            }
-            if (index2 > 0 && index2 < rightCacheBlock.length) {//处理缓冲区中剩下的tuple
-                for (Tuple cacheRight : rightCacheBlock) {
-                    if (cacheRight == null) break;
-                    for (Tuple cacheLeft : leftCacheBlock) {
-                        if (cacheLeft == null) break;
-                        //如果符合条件就合并来自两个表的tuple作为一条结果，加上为null的判断是因为此时cache没有满，最后有null值
-                        if (p.filter(cacheLeft, cacheRight)) {
-                            Tuple result = mergeTuples(cacheLeft, cacheRight);
-                            tuples.add(result);
-                        }
-                    }
-                }
-            }
-        }
-        return new TupleIterator(getTupleDesc(), tuples);
-    }
-
     private TupleIterator dbnlSortedJoin() throws DbException, TransactionAbortedException {
         LinkedList<Tuple> tuples = new LinkedList<>();
         int blockSize1 = blockMemory / child1.getTupleDesc().getSize();//131072是MySql中该算法的默认缓冲区大小
@@ -323,13 +236,13 @@ public class Join extends Operator {
                     Tuple right = child2.next();
                     rightCacheBlock[index2++] = right;//将右表的tuple放入缓存
                     if (index2 >= rightCacheBlock.length) {//如果右缓冲区满了，就先处理缓存中的tuple
-                        sortedJoin(tuples, leftCacheBlock, rightCacheBlock, length1);
+                        sortedJoin(tuples, leftCacheBlock, rightCacheBlock);
                         Arrays.fill(rightCacheBlock, null);//清空右缓存区，以供继续遍历右表
                         index2 = 0;
                     }
                 }
                 if (index2 > 0 && index2 < rightCacheBlock.length) {//处理缓冲区中剩下的tuple
-                    sortedJoin(tuples, leftCacheBlock, rightCacheBlock, length1);
+                    sortedJoin(tuples, leftCacheBlock, rightCacheBlock);
                     Arrays.fill(rightCacheBlock, null);//清空右缓存区，以供下一个左缓存区对右缓存区的遍历
                     index2 = 0;
                 }
@@ -343,19 +256,19 @@ public class Join extends Operator {
                 Tuple right = child2.next();
                 rightCacheBlock[index2++] = right;//将右表的tuple放入缓存
                 if (index2 >= rightCacheBlock.length) {//如果缓冲区满了，就先处理缓存中的tuple
-                    sortedJoin(tuples, leftCacheBlock, rightCacheBlock, length1);
+                    sortedJoin(tuples, leftCacheBlock, rightCacheBlock);
                     Arrays.fill(rightCacheBlock, null);//清空右缓存区，以供继续遍历右表
                     index2 = 0;
                 }
             }
             if (index2 > 0 && index2 < rightCacheBlock.length) {//处理缓冲区中剩下的tuple
-                sortedJoin(tuples, leftCacheBlock, rightCacheBlock, length1);
+                sortedJoin(tuples, leftCacheBlock, rightCacheBlock);
             }
         }
         return new TupleIterator(getTupleDesc(), tuples);
     }
 
-    private void sortedJoin(LinkedList<Tuple> tuples, Tuple[] lcb, Tuple[] rcb, int length1) {
+    private void sortedJoin(LinkedList<Tuple> tuples, Tuple[] lcb, Tuple[] rcb) {
         // 去掉两个Block的null值
         int m = lcb.length - 1;
         int n = rcb.length - 1;
@@ -375,24 +288,22 @@ public class Join extends Operator {
         JoinPredicate gtPredicate1 = new JoinPredicate(index1, Predicate.Op.GREATER_THAN, index1);
         JoinPredicate gtPredicate2 = new JoinPredicate(index2, Predicate.Op.GREATER_THAN, index2);
         //先对两个缓存区排序
-        Comparator<Tuple> comparator1 = new Comparator<Tuple>() {
-            @Override
-            public int compare(Tuple o1, Tuple o2) {
-                if (ltPredicate1.filter(o1, o2)) {
-                    return -1;
-                } else if (gtPredicate1.filter(o1, o2)) {
-                    return 1;
-                } else return 0;
+        Comparator<Tuple> comparator1 = (o1, o2) -> {
+            if (ltPredicate1.filter(o1, o2)) {
+                return -1;
+            } else if (gtPredicate1.filter(o1, o2)) {
+                return 1;
+            } else {
+                return 0;
             }
         };
-        Comparator<Tuple> comparator2 = new Comparator<Tuple>() {
-            @Override
-            public int compare(Tuple o1, Tuple o2) {
-                if (ltPredicate2.filter(o1, o2)) {
-                    return -1;
-                } else if (gtPredicate2.filter(o1, o2)) {
-                    return 1;
-                } else return 0;
+        Comparator<Tuple> comparator2 = (o1, o2) -> {
+            if (ltPredicate2.filter(o1, o2)) {
+                return -1;
+            } else if (gtPredicate2.filter(o1, o2)) {
+                return 1;
+            } else {
+                return 0;
             }
         };
         Arrays.sort(leftCacheBlock, comparator1);
