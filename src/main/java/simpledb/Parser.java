@@ -103,7 +103,7 @@ public class Parser {
                     } catch (IOException e) {
                         throw new ParsingException("Invalid subquery "
                                 + ops.elementAt(1));
-                    } catch (Zql.ParseException e) {
+                    } catch (ParseException e) {
                         throw new ParsingException("Invalid subquery "
                                 + ops.elementAt(1));
                     }
@@ -133,7 +133,7 @@ public class Parser {
     }
 
     public LogicalPlan parseQueryLogicalPlan(TransactionId tid, ZQuery q)
-            throws IOException, Zql.ParseException, ParsingException {
+            throws IOException, ParseException, ParsingException {
         @SuppressWarnings("unchecked")
         Vector<ZFromItem> from = q.getFrom();
         LogicalPlan lp = new LogicalPlan();
@@ -275,7 +275,8 @@ public class Parser {
 
     public Query handleQueryStatement(ZQuery s, TransactionId tId)
             throws TransactionAbortedException, DbException, IOException,
-            ParsingException, Zql.ParseException {
+            ParsingException, ParseException {
+        // and run it
         Query query = new Query(tId);
 
         LogicalPlan lp = parseQueryLogicalPlan(tId, s);
@@ -322,7 +323,7 @@ public class Parser {
 
     public Query handleInsertStatement(ZInsert s, TransactionId tId)
             throws TransactionAbortedException, DbException, IOException,
-            ParsingException, Zql.ParseException {
+            ParsingException, ParseException {
         int tableId;
         try {
             tableId = Database.getCatalog().getTableId(s.getTable()); // will
@@ -396,7 +397,7 @@ public class Parser {
 
     public Query handleDeleteStatement(ZDelete s, TransactionId tid)
             throws TransactionAbortedException, DbException, IOException,
-            ParsingException, Zql.ParseException {
+            ParsingException, ParseException {
         int id;
         try {
             id = Database.getCatalog().getTableId(s.getTable()); // will fall
@@ -429,7 +430,7 @@ public class Parser {
 
     public void handleTransactStatement(ZTransactStmt s)
             throws TransactionAbortedException, DbException, IOException,
-            ParsingException, Zql.ParseException {
+            ParsingException, ParseException {
         if (s.getStmtType().equals("COMMIT")) {
             if (curtrans == null)
                 throw new ParsingException(
@@ -473,7 +474,7 @@ public class Parser {
                 LogicalPlan lp = parseQueryLogicalPlan(tid, (ZQuery) stmt);
                 return lp;
             }
-        } catch (Zql.ParseException e) {
+        } catch (ParseException e) {
             throw new ParsingException(
                     "Invalid SQL expression: \n \t " + e);
         } catch (IOException e) {
@@ -551,10 +552,10 @@ public class Parser {
                     this.inUserTrans = false;
 
                     if (a instanceof ParsingException
-                            || a instanceof Zql.ParseException)
+                            || a instanceof ParseException)
                         throw new ParsingException((Exception) a);
-                    if (a instanceof Zql.TokenMgrError)
-                        throw (Zql.TokenMgrError) a;
+                    if (a instanceof TokenMgrError)
+                        throw (TokenMgrError) a;
                     throw new DbException(a.getMessage());
                 } finally {
                     if (!inUserTrans)
@@ -571,9 +572,9 @@ public class Parser {
         } catch (ParsingException e) {
             System.out
                     .println("Invalid SQL expression: \n \t" + e.getMessage());
-        } catch (Zql.ParseException e) {
+        } catch (ParseException e) {
             System.out.println("Invalid SQL expression: \n \t " + e);
-        } catch (Zql.TokenMgrError e) {
+        } catch (TokenMgrError e) {
             System.out.println("Invalid SQL expression: \n \t " + e);
         }
     }
@@ -584,7 +585,6 @@ public class Parser {
             "insert", "delete", "values", "into" };
 
     public static void main(String argv[]) throws IOException {
-        argv = new String[] {"F:\\db\\simpledb\\dblp_data\\dblp_simpledb.schema"};
 
         if (argv.length < 1 || argv.length > 4) {
             System.out.println("Invalid number of arguments.\n" + usage);
