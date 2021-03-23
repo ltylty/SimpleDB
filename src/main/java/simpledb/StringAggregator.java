@@ -45,8 +45,13 @@ public class StringAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
-    	Field gbfieldInstance = tup.getField(gbfield);
-    	
+		Field gbfieldInstance = null;
+		if(gbfield == Aggregator.NO_GROUPING) {
+			gbfieldInstance = new IntField(Aggregator.NO_GROUPING);
+		} else {
+			gbfieldInstance = tup.getField(gbfield);
+		}
+
     	Integer result = map.get(gbfieldInstance);
     	Integer value = null; 
     	switch (what) {

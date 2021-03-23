@@ -58,14 +58,14 @@ public class IntegerAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
-    	Field afieldInstance = null;
+		Field gbfieldInstance = null;
     	if (gbfield == Aggregator.NO_GROUPING) {
-    		afieldInstance = new IntField(Aggregator.NO_GROUPING);
+			gbfieldInstance = new IntField(Aggregator.NO_GROUPING);
 		} else {
-			afieldInstance = tup.getField(afield);
+			gbfieldInstance = tup.getField(gbfield);
 		}
-    			
-    	Field gbfieldInstance = tup.getField(gbfield);
+
+		Field afieldInstance = tup.getField(afield);
     	int intValue = ((IntField)afieldInstance).getValue();
     	
     	Integer value = null;
@@ -99,7 +99,7 @@ public class IntegerAggregator implements Aggregator {
 				if(result == null) {
 					value = 1;
 				} else {
-					value = result++;
+					value = ++result;
 				}
 				break;
 			}
