@@ -1,8 +1,18 @@
 package simpledb;
 
+import java.util.HashMap;
+
 /** A class to represent a fixed-width histogram over a single integer-based field.
  */
 public class IntHistogram {
+
+    int buckets;
+    int min;
+    int max;
+
+    private int bucketSize;
+    private int totalElement;
+    private HashMap<Integer, Integer> bucketMap;
 
     /**
      * Create a new IntHistogram.
@@ -22,6 +32,16 @@ public class IntHistogram {
      */
     public IntHistogram(int buckets, int min, int max) {
     	// some code goes here
+        this.buckets = buckets;
+        this.min = min;
+        this.max = max;
+
+        this.totalElement = 0;
+        this.bucketSize = (max - min) / buckets + 1;
+        bucketMap = new HashMap<Integer, Integer>();
+        for (int i = 1; i <= buckets; i++) {
+            bucketMap.put(i, 0);
+        }
     }
 
     /**
@@ -30,6 +50,9 @@ public class IntHistogram {
      */
     public void addValue(int v) {
     	// some code goes here
+        int pos = (v - min) / bucketSize + 1;
+        bucketMap.put(pos, bucketMap.get(pos) + 1);
+        totalElement += 1;
     }
 
     /**
@@ -45,7 +68,62 @@ public class IntHistogram {
     public double estimateSelectivity(Predicate.Op op, int v) {
 
     	// some code goes here
-        return -1.0;
+        //return -1.0;
+
+        if (v < min) {
+            if (op.equals(Predicate.Op.GREATER_THAN) || op.equals(Predicate.Op.GREATER_THAN_OR_EQ)
+                    || op.equals(Predicate.Op.NOT_EQUALS)) {
+                return 1.0;
+            }
+            return 0.0;
+        }
+        if (v > max) {
+            if (op.equals(Predicate.Op.LESS_THAN) || op.equals(Predicate.Op.LESS_THAN_OR_EQ)
+                    || op.equals(Predicate.Op.NOT_EQUALS)) {
+                return 1.0;
+            }
+            return 0.0;
+        }
+        int pos = (v - min) / bucketSize + 1;
+        int numElements = 0;
+
+        switch(op) {
+            case EQUALS:
+                numElements += bucketMap.get(pos) / bucketSize;
+                break;
+            case GREATER_THAN:
+                for (int i = pos + 1; i <= buckets; i++) {
+                    numElements += bucketMap.get(i);
+                }
+                numElements += (pos * bucketSize - (v - min + 1)) * bucketMap.get(pos) / bucketSize;
+                break;
+            case LESS_THAN:
+                for (int i = 1; i <= pos - 1; i++) {
+                    numElements += bucketMap.get(i);
+                }
+                numElements += ((v - min) - (pos - 1) * bucketSize) * bucketMap.get(pos) / bucketSize;
+                break;
+            case LESS_THAN_OR_EQ:
+                for (int i = 1; i <= pos - 1; i++) {
+                    numElements += bucketMap.get(i);
+                }
+                numElements += ((v - min) - (pos - 1) * bucketSize) * bucketMap.get(pos) / bucketSize;
+                numElements += bucketMap.get(pos) / bucketSize;
+                break;
+            case GREATER_THAN_OR_EQ:
+                for (int i = pos + 1; i <= buckets; i++) {
+                    numElements += bucketMap.get(i);
+                }
+                numElements += (pos * bucketSize - (v - min)) * bucketMap.get(pos) / bucketSize;
+                break;
+            case NOT_EQUALS:
+                numElements = totalElement - bucketMap.get(pos) / bucketSize;
+                break;
+        }
+        if (totalElement == 0) {
+            return 0.0;
+        }
+        return numElements * 1.0 / totalElement;
     }
     
     /**
@@ -68,6 +146,6 @@ public class IntHistogram {
     public String toString() {
 
         // some code goes here
-        return null;
+        return bucketMap.toString();
     }
 }
