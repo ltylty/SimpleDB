@@ -1,6 +1,7 @@
 package simpledb;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -45,7 +46,7 @@ public class LockManager {
                 sharedLocks.get(pid).remove(tid);
                 return true;
             }
-            if (exclusiveLocks.get(pid) == null && sharedLocks.get(pid) == null) {
+            if (exclusiveLocks.get(pid) == null && (sharedLocks.get(pid) == null || sharedLocks.get(pid).size() == 0)) {
                 exclusiveLocks.put(pid, tid);
                 return true;
             }
@@ -85,4 +86,5 @@ public class LockManager {
         boolean e = exclusiveLocks.get(pid).equals(tid);
         return s || e;
     }
+
 }

@@ -79,24 +79,12 @@ public class BufferPool {
             /* my code for proj2 */
             if (pagesCacheMap.size() >= numPages) {
                 /* random evictPage */
-                boolean hasDirtyPage = false;
-                PageId removeId = null;
                 for (PageId pageId : pagesCacheMap.keySet()) {
                     Page p = pagesCacheMap.get(pageId);
-                    removeId = pageId;
-                    if (p.isDirty() != null) {
-                        hasDirtyPage = true;
-                        try {
-                            flushPage(pageId);
-                        } catch(IOException e) {
-                            e.printStackTrace();
-                        }
+                    if (p.isDirty() == null) {
                         pagesCacheMap.remove(pageId);
                         break;
                     }
-                }
-                if (!hasDirtyPage) {
-                    pagesCacheMap.remove(removeId);
                 }
             }
             /* my code for proj2 */
@@ -129,6 +117,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
+        transactionComplete(tid, true);
     }
 
     /** Return true if the specified transaction has a lock on the specified page */
@@ -149,6 +138,19 @@ public class BufferPool {
         throws IOException {
         // some code goes here
         // not necessary for proj1
+        if (commit) {
+            flushPages(tid);
+        } else {
+            for (PageId pid : pagesCacheMap.keySet()) {
+                Page p = pagesCacheMap.get(pid);
+                if (p.isDirty() != null && tid.equals(p.isDirty())) {
+                    Catalog catalog = Database.getCatalog();
+                    Page newPage = catalog.getDbFile(pid.getTableId()).readPage(pid);
+                    pagesCacheMap.put(pid, newPage);
+                }
+            }
+        }
+        lockManager.releaseAllLocks(tid);
     }
 
     /**
