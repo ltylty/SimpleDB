@@ -23,8 +23,10 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     private int numPages;
-    private HashMap<PageId, Page> pagesCacheMap = null;
-    
+    private HashMap<PageId, Page> pagesCacheMap;
+
+    private LockManager lockManager;
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -34,6 +36,7 @@ public class BufferPool {
         // some code goes here
     	this.numPages = numPages;
     	pagesCacheMap = new HashMap<PageId, Page>();
+        lockManager = new LockManager();
     }
 
     /**
@@ -54,6 +57,20 @@ public class BufferPool {
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
+        boolean hasLock = lockManager.getLock(perm, tid, pid);
+        long start = System.currentTimeMillis();
+        while (!hasLock) {
+            if (System.currentTimeMillis() - start > 300) {
+                throw new TransactionAbortedException();
+            }
+            try {
+                Thread.sleep(10);
+                hasLock = lockManager.getLock(perm, tid, pid);
+            } catch(InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     	Page page = pagesCacheMap.get(pid);
         if (page == null) {
             DbFile file = Database.getCatalog().getDbFile(pid.getTableId());
@@ -101,6 +118,7 @@ public class BufferPool {
     public  void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for proj1
+        lockManager.releaseLock(tid, pid);
     }
 
     /**
@@ -117,7 +135,7 @@ public class BufferPool {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for proj1
-        return false;
+        return lockManager.holdsLock(tid, p);
     }
 
     /**
