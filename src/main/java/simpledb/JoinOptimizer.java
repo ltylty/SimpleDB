@@ -249,7 +249,7 @@ public class JoinOptimizer {
         if (explain) {
             printJoins(joins, optjoin, stats, filterSelectivities);
         }
-        return optjoin.getOrder(new HashSet<LogicalJoinNode>(joins));
+        return Optional.ofNullable(optjoin.getOrder(new HashSet<LogicalJoinNode>(joins))).orElse(new Vector<>());
     }
 
     // ===================== Private Methods =================================
