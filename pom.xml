@@ -32,11 +32,6 @@
             <systemPath>${project.basedir}/lib/zql.jar</systemPath>
         </dependency>
         <!-- https://mvnrepository.com/artifact/jline/jline -->
-        <dependency>
-            <groupId>jline</groupId>
-            <artifactId>jline</artifactId>
-            <version>0.9.94</version>
-        </dependency>
 
 
     </dependencies>

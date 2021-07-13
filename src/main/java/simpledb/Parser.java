@@ -5,10 +5,6 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
-import jline.ArgumentCompletor;
-import jline.ConsoleReader;
-import jline.SimpleCompletor;
-
 public class Parser {
     static boolean explain = false;
 
@@ -647,19 +643,15 @@ public class Parser {
                 System.out.println("Unable to find query file" + queryFile);
                 e.printStackTrace();
             }
-        } else { // no query file, run interactive prompt
-            ConsoleReader reader = new ConsoleReader();
-
-            // Add really stupid tab completion for simple SQL
-            ArgumentCompletor completor = new ArgumentCompletor(
-                    new SimpleCompletor(SQL_COMMANDS));
-            completor.setStrict(false); // match at any position
-            reader.addCompletor(completor);
+        } else {
+            // no query file, run interactive prompt
+            System.out.println("input command");
+            Scanner scanner = new Scanner(System.in);
 
             StringBuilder buffer = new StringBuilder();
             String line;
             boolean quit = false;
-            while (!quit && (line = reader.readLine("SimpleDB> ")) != null) {
+            while (!quit && (line = scanner.nextLine()) != null) {
                 // Split statements at ';': handles multiple statements on one
                 // line, or one
                 // statement spread across many lines
