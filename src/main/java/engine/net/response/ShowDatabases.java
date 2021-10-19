@@ -3,7 +3,7 @@ package engine.net.response;
 import java.util.ArrayList;
 import java.util.List;
 
-import engine.Database;
+import engine.DatabaseInstance;
 import engine.net.handler.frontend.FrontendConnection;
 import engine.net.proto.mysql.EOFPacket;
 import engine.net.proto.mysql.FieldPacket;
@@ -73,7 +73,7 @@ public final class ShowDatabases {
     }
 
     private static List<String> getSchemas() {
-        Database database = Database.getInstance();
+        DatabaseInstance databaseInstance = DatabaseInstance.getInstance();
         ArrayList<String> list = new ArrayList<String>();
         // 当前没有schema概念
         list.add("freedom");

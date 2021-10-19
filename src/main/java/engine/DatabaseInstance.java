@@ -5,9 +5,9 @@ import simpledb.TableStats;
 /**
  * @Author lizhuyang
  */
-public class Database {
+public class DatabaseInstance {
 
-    private static Database database = null;
+    private static DatabaseInstance databaseInstance = null;
     // 默认端口号是8090
     private int serverPort = 8090;
     // 默认用户名密码是pay|miracle
@@ -17,14 +17,14 @@ public class Database {
 
     // 单例模式
     static {
-        database = new Database();
+        databaseInstance = new DatabaseInstance();
         // 加载数据
         simpledb.Database.getCatalog().loadSchema("F:\\db\\simpledb\\dblp_data\\dblp_simpledb.schema");
         TableStats.computeStatistics();
     }
 
-    public static Database getInstance() {
-        return database;
+    public static DatabaseInstance getInstance() {
+        return databaseInstance;
     }
 
     public int getServerPort() {

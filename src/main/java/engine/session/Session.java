@@ -1,7 +1,9 @@
 package engine.session;
 
 import engine.net.handler.frontend.FrontendConnection;
-import simpledb.Parser;
+import engine.net.response.OkResponse;
+
+import engine.sql.Parser;
 import simpledb.Transaction;
 
 import java.io.IOException;
@@ -46,6 +48,6 @@ public class Session {
         t.start();
         Parser p = new Parser();
         p.setTransaction(t);
-        p.processNextStatement(sql+";");
+        p.processNextStatement(sql+";", connection);
     }
 }

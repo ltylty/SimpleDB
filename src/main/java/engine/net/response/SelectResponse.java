@@ -1,7 +1,5 @@
-/*
 package engine.net.response;
 
-import alchemystar.freedom.meta.value.Value;
 import engine.net.handler.frontend.FrontendConnection;
 import engine.net.proto.mysql.EOFPacket;
 import engine.net.proto.mysql.FieldPacket;
@@ -14,12 +12,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.util.ArrayList;
+import java.util.List;
 
-*/
 /**
  * @Author lizhuyang
- *//*
-
+ */
 public class SelectResponse {
 
     private Integer fieldCount;
@@ -47,11 +44,8 @@ public class SelectResponse {
         buffer = header.writeBuf(buffer, c.getCtx());
         for (Field field : fields) {
             FieldPacket packet = null;
-            if (field.getType() == Value.LONG) {
-                packet = PacketUtil.getField(field.getFieldName(), Fields.FIELD_TYPE_LONGLONG);
-            } else if (field.getType() == Value.INT) {
-                // int to long
-                packet = PacketUtil.getField(field.getFieldName(), Fields.FIELD_TYPE_LONG);
+            if (field.getType() == Fields.FIELD_TYPE_INT24) {
+                packet = PacketUtil.getField(field.getFieldName(), Fields.FIELD_TYPE_INT24);
             } else {
                 packet = PacketUtil.getField(field.getFieldName(), Fields.FIELD_TYPE_VAR_STRING);
             }
@@ -72,10 +66,10 @@ public class SelectResponse {
         c.getCtx().writeAndFlush(buffer);
     }
 
-    public void writeRow(Value[] values, FrontendConnection c, ByteBuf buffer) {
+    public void writeRow(List<String> values, FrontendConnection c, ByteBuf buffer) {
         RowDataPacket row = new RowDataPacket(fieldCount);
-        for (Value item : values) {
-            row.add(StringUtil.encode(item.getString(), c.getCharset()));
+        for (String item : values) {
+            row.add(StringUtil.encode(item, c.getCharset()));
         }
         row.packetId = ++packetId;
         row.writeBuf(buffer, c.getCtx());
@@ -96,19 +90,6 @@ public class SelectResponse {
             buffer = row.writeBuf(buffer, ctx);
         }
         writeLastEof(c, buffer);
-    }
-
-    public static int convertValueTypeToFieldType(int valueType) {
-        if (valueType == Value.BOOLEAN) {
-            return Fields.FIELD_TYPE_BIT;
-        } else if (valueType == Value.INT) {
-            return Fields.FIELD_TYPE_INT24;
-        } else if (valueType == Value.LONG) {
-            return Fields.FIELD_TYPE_LONG;
-        } else if (valueType == Value.STRING) {
-            return Fields.FIELD_TYPE_STRING;
-        }
-        throw new RuntimeException("not support this valueType : " + valueType);
     }
 
     public ArrayList<ArrayList<String>> getRows() {
@@ -153,4 +134,3 @@ public class SelectResponse {
         this.originCharset = originCharset;
     }
 }
-*/

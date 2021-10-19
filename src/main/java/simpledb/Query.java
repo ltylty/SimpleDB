@@ -2,6 +2,10 @@ package simpledb;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Query is a wrapper class to manage the execution of queries. It takes a query
@@ -113,6 +117,18 @@ public class Query implements Serializable {
             cnt++;
         }
         System.out.println("\n " + cnt + " rows.");
+        this.close();
+    }
+
+    public void execute(Function before,BiConsumer function, Consumer after) throws IOException, DbException, TransactionAbortedException {
+        TupleDesc td = this.getOutputTupleDesc();
+        Object obj = before.apply(td);
+
+        this.start();
+        while (this.hasNext()) {
+            function.accept(this.next(), obj);
+        }
+        after.accept(obj);
         this.close();
     }
 }

@@ -1,6 +1,6 @@
 package engine.net.handler.frontend;
 
-import engine.Database;
+import engine.DatabaseInstance;
 import engine.net.proto.mysql.AuthPacket;
 import engine.net.proto.mysql.BinaryPacket;
 import engine.net.proto.mysql.HandshakePacket;
@@ -121,10 +121,10 @@ public class FrontendAuthenticator extends ChannelHandlerAdapter {
         if (user == null || user.length() == 0) {
             return false;
         }
-        if (!user.equals(Database.getInstance().getUserName())) {
+        if (!user.equals(DatabaseInstance.getInstance().getUserName())) {
             return false;
         }
-        String pass = Database.getInstance().getPassWd();
+        String pass = DatabaseInstance.getInstance().getPassWd();
         // check null
         if (pass == null || pass.length() == 0) {
             if (password == null || password.length == 0) {

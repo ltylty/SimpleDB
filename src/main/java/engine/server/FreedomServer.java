@@ -1,6 +1,6 @@
 package engine.server;
 
-import engine.Database;
+import engine.DatabaseInstance;
 import engine.config.SocketConfig;
 import engine.net.handler.factory.FrontHandlerFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -53,7 +53,7 @@ public class FreedomServer extends Thread {
 
         try {
             // Freedom Server
-            Database database = Database.getInstance();
+            DatabaseInstance databaseInstance = DatabaseInstance.getInstance();
             ServerBootstrap b = new ServerBootstrap();
             // 这边的childHandler是用来管理accept的
             // 由于线程间传递的是byte[],所以内存池okay
@@ -64,7 +64,7 @@ public class FreedomServer extends Thread {
                     PooledByteBufAllocator.DEFAULT)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, SocketConfig.CONNECT_TIMEOUT_MILLIS)
                     .option(ChannelOption.SO_TIMEOUT, SocketConfig.SO_TIMEOUT);
-            ChannelFuture f = b.bind(database.getServerPort()).sync();
+            ChannelFuture f = b.bind(databaseInstance.getServerPort()).sync();
             f.channel().closeFuture().sync();
 
         } catch (InterruptedException e) {
