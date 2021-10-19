@@ -123,6 +123,14 @@ public class Catalog {
         // some code goes here
         return tables.get(id).name;
     }
+
+    public List<String> getTableNames() {
+        List<String> result = new ArrayList<>();
+        for(Entry<Integer, Table> entry : tables.entrySet()) {
+            result.add(entry.getValue().name);
+        }
+        return result;
+    }
     
     /** Delete all tables from the catalog */
     public void clear() {
