@@ -19,7 +19,8 @@ public class DatabaseInstance {
     static {
         databaseInstance = new DatabaseInstance();
         // 加载数据
-        simpledb.Database.getCatalog().loadSchema("F:\\db\\simpledb\\dblp_data\\dblp_simpledb.schema");
+        String catalogFile = "dblp_data/dblp_simpledb.schema";
+        simpledb.Database.getCatalog().loadSchema(catalogFile);
         TableStats.computeStatistics();
     }
 
