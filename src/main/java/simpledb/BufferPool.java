@@ -198,6 +198,7 @@ public class BufferPool {
         // not necessary for proj1
     	HeapFile file = (HeapFile)Database.getCatalog().getDbFile(t.getRecordId().getPageId().getTableId());
     	Page page = file.deleteTuple(tid, t);
+        page.markDirty(true, tid);
     	 if (pagesCacheMap.containsKey(page.getId())) {
              pagesCacheMap.put(page.getId(), page);
          }
