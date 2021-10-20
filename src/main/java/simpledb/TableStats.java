@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -102,6 +103,7 @@ public class TableStats {
         file = (HeapFile) table;
         histograms = new Object[table.getTupleDesc().numFields()];
         Transaction transaction= new Transaction();
+        transaction.start();
         DbFileIterator iterator = table.iterator(transaction.getId());
 
         try {
@@ -111,6 +113,12 @@ public class TableStats {
         } catch (DbException e) {
             e.printStackTrace();
         } catch (TransactionAbortedException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            transaction.commit();
+        } catch(IOException e) {
             e.printStackTrace();
         }
 
