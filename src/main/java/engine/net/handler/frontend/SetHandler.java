@@ -4,6 +4,7 @@ import engine.net.proto.mysql.OkPacket;
 import engine.net.proto.util.ErrorCode;
 import engine.net.proto.util.Isolations;
 import engine.net.response.CharacterSet;
+import engine.parser.ServerParse;
 import engine.parser.ServerParseSet;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
@@ -74,8 +75,8 @@ public final class SetHandler {
                 break;
             default:
                 StringBuilder s = new StringBuilder();
-                logger.warn(s.append(c).append(stmt).append(" is not executed").toString());
-                c.writeOk();
+                //logger.warn(s.append(c).append(stmt).append(" is not executed").toString());
+                c.execute(stmt, ServerParse.SET);
         }
     }
 

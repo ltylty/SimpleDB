@@ -44,9 +44,6 @@ public class ServerQueryHandler implements FrontendQueryHandler {
             case ServerParse.START:
                 StartHandler.handle(sql, source, rs >>> 8);
                 break;
-            case ServerParse.BEGIN:
-                source.begin();
-                break;
             case ServerParse.SAVEPOINT:
                 SavepointHandler.handle(sql, source);
                 break;
@@ -61,12 +58,6 @@ public class ServerQueryHandler implements FrontendQueryHandler {
                 break;
             case ServerParse.CREATE_DATABASE:
                 // source.createShema(sql);
-                break;
-            case ServerParse.COMMIT:
-                source.commit();
-                break;
-            case ServerParse.ROLLBACK:
-                source.rollBack();
                 break;
             case ServerParse.USE:
                 UseHandler.handle(sql, source, rs >>> 8);

@@ -2,6 +2,7 @@ package engine.sql;
 
 import Zql.*;
 import engine.net.handler.frontend.FrontendConnection;
+import engine.net.response.OkResponse;
 import simpledb.*;
 
 import java.io.*;
@@ -435,29 +436,23 @@ public class Parser {
                 throw new ParsingException(
                         "No transaction is currently running");
             curtrans.commit();
-            curtrans = null;
             inUserTrans = false;
-            System.out.println("Transaction " + curtrans.getId().getId()
-                    + " committed.");
+            System.out.println("Transaction " + curtrans.getId().getId() + " committed.");
+            curtrans = null;
         } else if (s.getStmtType().equals("ROLLBACK")) {
             if (curtrans == null)
-                throw new ParsingException(
-                        "No transaction is currently running");
+                throw new ParsingException("No transaction is currently running");
             curtrans.abort();
-            curtrans = null;
             inUserTrans = false;
-            System.out.println("Transaction " + curtrans.getId().getId()
-                    + " aborted.");
-
+            System.out.println("Transaction " + curtrans.getId().getId() + " aborted.");
+            curtrans = null;
         } else if (s.getStmtType().equals("SET TRANSACTION")) {
             if (curtrans != null)
-                throw new ParsingException(
-                        "Can't start new transactions until current transaction has been committed or rolledback.");
+                throw new ParsingException("Can't start new transactions until current transaction has been committed or rolledback.");
             curtrans = new Transaction();
             curtrans.start();
             inUserTrans = true;
-            System.out.println("Started a new transaction tid = "
-                    + curtrans.getId().getId());
+            System.out.println("Started a new transaction tid = " + curtrans.getId().getId());
         } else {
             throw new ParsingException("Unsupported operation");
         }
@@ -507,9 +502,10 @@ public class Parser {
             ZStatement s = p.readStatement();
 
             Query query = null;
-            if (s instanceof ZTransactStmt)
+            if (s instanceof ZTransactStmt) {
                 handleTransactStatement((ZTransactStmt) s);
-            else {
+                OkResponse.response(connection);
+            } else {
                 if (!this.inUserTrans) {
                     curtrans = new Transaction();
                     curtrans.start();

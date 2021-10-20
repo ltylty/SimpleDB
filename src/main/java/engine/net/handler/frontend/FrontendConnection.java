@@ -6,15 +6,12 @@ import engine.net.proto.mysql.MySQLMessage;
 import engine.net.proto.mysql.OkPacket;
 import engine.net.proto.util.CharsetUtil;
 import engine.net.proto.util.ErrorCode;
-import engine.net.response.OkResponse;
 import engine.session.Session;
 import engine.session.SessionFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import simpledb.Parser;
-import simpledb.Transaction;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
@@ -202,21 +199,6 @@ public class FrontendConnection {
         } else {
             return false;
         }
-    }
-
-    public void begin() {
-        //session.begin();
-        OkResponse.response(this);
-    }
-
-    public void commit() {
-        //session.commit();
-        OkResponse.response(this);
-    }
-
-    public void rollBack() {
-        //session.rollback();
-        OkResponse.response(this);
     }
 
     public void txResponse() {
