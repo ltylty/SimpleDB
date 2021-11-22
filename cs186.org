@@ -1,0 +1,118 @@
+cs186是伯克利大学数据库作业,实现一个简单的数据库。主页：https://sites.google.com/site/cs186fall2013/homeworks。 作业已经提供了框架，按照说明一步步完成具体的功能就行。
+作业中文件下载链接已经失效，可以在这个仓库找到https://github.com/zjsyhjh/ucb-cs186。
+* Project 1
+原项目使用ant，我改成了maven。
+几个关键类的介绍：
+** Database
+代表一个数据库实例，通过他可以访问Catalog和BufferPool
+** Catalog
+类似MySQL中的库
+** Table
+数据表
+** Tuple
+一行数据
+** TupleDesc
+对tuple的描述。可以理解为表结构,定义字段名和字段类型
+** BufferPool
+表的数据以页（page）为单位存在文件中。BufferPool是page的缓存，通过BufferPool可以对page进行读写。
+** DbFile
+每张表对应的数据库文件。由多个页组成。
+** HeapFile
+对DbFile的实现。
+** Page 
+数据存储到磁盘的载体。
+** HeapPage
+Page的实现。默认大小为4KB。与磁盘页大小对齐。
+每一个Page中都有一个header，是一个字节数组。Page是由一系列的slot组成的（slot由tuple填充）。
+header中的每一位代表某一个slot是否有tuple。比如：如果header是10010，代表第1个slot和第3个slot存储着tuple，但是其他slot没有tuple，只是一个空的slot。所以每一个tuple需要多余的一个bit的来存储。
+所以一个页能存储的tuple数量为： tupsPerPage = floor((BufferPool.PAGE_SIZE * 8) / (tuple size * 8 + 1))。
+计算出tuplesPerPage之后，我们就知道了需要用多少个字节来存储header。headerBytes = ceiling(tupsPerPage/8)。
+** SeqScan
+用来遍历表的每一行数据
+* Project 2 
+  实现增删改查、关联、聚合
+** Filter and Join
+实现表的条件过滤与关联。
+常见的join算法有nested loop join，block nested loop join，sort-merge join, hash join。
+** Aggregates
+实现表的聚合
+** Insertion and deletion
+实现新增与删除
+** Page eviction
+页缓存的淘汰策略
+** Query Parser and Contest
+做到这一步，基本的增删改查已经完成。接下来进行一些实验。
+作业提供了数据文件夹dblp_data。dblp_simpledb.schema定义表结构，每个dat文件表示每张表的数据。执行Parser类的main方法，参数传dblp_simpledb.schema文件路径。就可以进入交互式控制台。输入sql语句可以得到执行结果。
+* Project 3
+实现sql优化器，基于代价的优化器(Cost-Based Optimizer，CBO)。代码入口在Paser类的main方法。
+** 名词解释
+*** cbo
+    cost based optimizer,基于成本的优化。与之对应的还有基于规则的优化（rule based optimizer）。
+*** cardinality
+    基数，预估的返回行数
+*** selectivity
+    选择性，cardinality除以总行数
+*** 基数与选择性的说明
+    上面是cbo语境下描述，cardinality=NUM_ROWS*selectivity。选择性越低越好。
+    如果是说索引的选择性，selectivity = 索引列的cardinality（列中不同值的个数） / 表的总行数。选择性越高越好。
+** Parser.java的执行过程
+   sql解析-->生成逻辑执行计划-->sql优化器-->生成物理执行计划-->基于第二章的实现执行。sql解析用了第三方工具zql parser。
+*** 第一步，simpledb.Parser.main() and simpledb.Parser.start()
+**** Database.getCatalog().loadSchema();
+    加载数据库和表
+**** TableStats.computeStatistics()
+统计每张表每个字段的数据分布。用来预估查询的选择性和成本。
+***** IntHistogram
+  数值类型字段存储数据分布状态。buckets代表桶的个数，bucketSize代表一个桶可以放多少个元素，min为最小值，max为最大值，totalElement为数据量。
+***** StringHistogram
+  把字符串转成数值，然后用IntHistogram实现。
+*** 第二步，simpledb.Parser.processNextStatement()
+    生成抽象语法树（AST）
+*** 第三步，simpledb.Parser.handleQueryStatement()
+    生成执行计划
+**** parseQueryLogicalPlan
+     生成逻辑执行计划。解析AST，把查询的字段、join关系、查询条件、聚合函数、分组字段、排序字段解析出来，放入LogicalPlan对象中
+**** physicalPlan
+     生成物理执行计划。通过LogicalPlan,生成第二章实现的各种operator。
+***** orderJoins
+     作业中的连接树使用左深树（Left Deep Join Tree），优点是实现简单，缺点是不能并行执行。对应的还有浓密树（Bushy Join Tree），优点是可以并行计算，通常用于分布式 数据库中。 
+     作业中使用动态规划来实现join重排序，重排序的目的是使join cost最小。
+     如果有六张表五个joinNode（一个join node代表两张表关联），想找到五个joinNode最优的顺序，可以先找到四个joinNode的最优顺序，然后再和下一个joinNode进行join。要找到四个joinNode的最优顺序，可以先找到三个joinNode的最优顺序。依此类推。
+     顺过来想就是先找到一个成本最小的joinNode，再找两个joinNode的最优顺序，最终找到五个joinNode的最优顺序。
+***** estimateJoinCost
+      关于join成本，作业中做了简单处理，假定join算法使用nested-loops join。
+      joincost(t1 join t2) = scancost(t1) + ntups(t1) x scancost(t2) //IO cost + ntups(t1) x ntups(t2)  //CPU cost
+      scancost(t1)为扫描表t1需要的io成本。ntups(t1)表示表t1的基数（cardinality=NUM_ROWS*selectivity）。总成本为IO成本加CPU成本。由于使用嵌套循环算法来join所以cpu成本是 ntups(t1) x ntups(t2)。
+***** enumerateSubsets
+      返回joinNodes的所有子集，参数i控制子集中元素(joinNode)的个数。
+      返回值为Set<Set<T>>，Set<T>表示一个子集，Set<Set<T>>表示多个子集。
+
+* Project 4
+  实现事务
+** 故障恢复机制
+   使用 NO STEAL/FORCE 机制，实现起来比较简单，不用记录redo log和undo log。
+   现在主流的策略是steal/no-force。写数据性能更好，数据恢复较慢，实现更复杂。
+*** NO STEAL
+    未提交的事务不会落盘
+*** FORCE
+    提交的事务立即落盘
+** 锁
+   对page进行加锁，使用读写锁。即共享锁、排他锁。
+** 两阶段锁
+   加锁阶段只能加锁，不能解锁。直到事务提交，进入解锁阶段。
+** 死锁检测
+   如果事务1持有Page1的锁等待Page2的锁，事务2持有Page2的锁等待page1的锁。就会造成死锁。
+   简单粗暴的做法是获取锁超时，直接抛异常TransactionAbortedException。
+   更完善的做法是进行死锁检测。
+   写业务代码时要规避死锁可以按照相同的顺序获取锁。
+* sql解析
+  sql解析在作业中没有实现。sql解析的过程主要分为词法解析和语法解析。
+** 词法解析
+   预先定义一些词法单元（Token），并进行分类。通常将词法单元分为关键字（数据库关键字）、标识符（表名、列名称等）、字面量（字符串和数值）、运算符（加减乘除、逻辑运算等）和分界符（逗号、分号、括号等）。
+   词法解析器每次读取一个字符，在当前字符与之前的字符所属分类不一致时，即完成一个词法单元的识别。
+** 语法解析
+   预先定义语法规则。依次读取词法解析出的token，和语法规则做匹配，如果满足规则，接续下一个token的匹配。如果不满足，提示错误并结束解析。
+   如果满足多个规则，需要超前搜索，直到确定一个正确的规则分支。
+** 实现
+   使用语法生成器javaCC、ANTLR ，定义词法、语法规则。
+   也可以参考h2database，完全手动实现。
