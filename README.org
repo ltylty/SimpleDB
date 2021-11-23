@@ -4,5 +4,47 @@
   工作中用的数据库也不少，oltp类型的MySQL、Oracle，olap类型的vertica、clickhouse，非关系型的redis、elasticsearch。
   数据库大体分为三层，网络协议层、sql解析优化层、数据存储层。每种数据库对这三层的实现都有取舍。clickhouse在网络协议层使用http协议，相比tcp效率低一些，但是实现更简单，而且数据库的瓶颈不在网络层，所以影响很小。clickhouse在数据存储层使用列式存储，查询速度更快，但是不支持事务。redis去掉了最复杂的sql解析优化层。
 * 过程
-1. 完成伯克利大学数据库作业cs186,也就实现了数据存储层和sql解析优化层，实现过程 [[file:cs186.org]] 。
-2. 加上协议层,协议层借鉴了[[https://github.com/alchemystar/Freedom][Freedom]] 。
+1. 完成伯克利大学数据库作业cs186,也就实现了数据存储层和sql解析优化层，实现过程 [[file:cs186.org]] 。代码在engine包中。
+2. 加上协议层,协议层借鉴了[[https://github.com/alchemystar/Freedom][Freedom]] 。代码在server包中。
+* 演示
+1. 运行 FreedomServer 的main方法。
+2. MySQL客户端需要5.7版本。终端中执行 mysql -hlocalhost -P8090 -upay -p123。
+3. 执行sql。目前不支持建表语句。
+     #+begin_src sql
+-- 查询
+SELECT p.title
+FROM papers p
+WHERE p.title LIKE 'selectivity';
+
+SELECT p.title, v.name
+FROM papers p, authors a, paperauths pa, venues v
+WHERE a.name = 'E. F. Codd'
+AND pa.authorid = a.id
+AND pa.paperid = p.id
+AND p.venueid = v.id;
+ 
+SELECT a2.name, count(p.id)
+FROM papers p, authors a1, authors a2, paperauths pa1, paperauths pa2
+WHERE a1.name = 'Michael Stonebraker'
+AND pa1.authorid = a1.id 
+AND pa1.paperid = p.id 
+AND pa2.authorid = a2.id 
+AND pa1.paperid = pa2.paperid
+GROUP BY a2.name
+ORDER BY a2.name;
+
+-- 删除和新增
+delete FROM authors where id = 141801;
+select * from authors where id = 141801;
+insert into authors (id,name) values (141801, 'lty');
+select * from authors where id = 141801;
+
+-- 事务
+delete FROM authors where id = 141801;
+set transaction READ WRITE;
+insert into authors (id,name) values (141801, 'lty');
+select * from authors where id = 141801;
+ROLLBACK;
+select * from authors where id = 141801;
+       
+     #+end_src
