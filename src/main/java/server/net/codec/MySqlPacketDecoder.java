@@ -57,7 +57,6 @@ public class MySqlPacketDecoder extends ByteToMessageDecoder {
         packet.packetId = packetId;
         // data will not be accessed any more,so we can use this array safely
         //packet.data = in.readBytes(packetLength).array();
-        //packet.data = ByteBufUtil.getBytes(in);
         byte[] bytes = new byte[packetLength];
         in.readBytes(bytes);
         packet.data = bytes;
