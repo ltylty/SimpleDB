@@ -1,6 +1,7 @@
 package server.net.handler.frontend;
 
 
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import server.config.SystemConfig;
 import server.net.proto.MySQLPacket;
 import server.net.proto.mysql.BinaryPacket;
@@ -19,7 +20,7 @@ import java.util.Date;
  *
  * @Author lizhuyang
  */
-public class FrontendCommandHandler extends ChannelHandlerAdapter {
+public class FrontendCommandHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(ChannelHandlerAdapter.class);
 

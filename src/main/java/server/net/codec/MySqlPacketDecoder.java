@@ -1,5 +1,6 @@
 package server.net.codec;
 
+import io.netty.buffer.ByteBufUtil;
 import server.net.proto.mysql.BinaryPacket;
 import server.net.proto.util.ByteUtil;
 import io.netty.buffer.ByteBuf;
@@ -8,6 +9,8 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -53,7 +56,11 @@ public class MySqlPacketDecoder extends ByteToMessageDecoder {
         packet.packetLength = packetLength;
         packet.packetId = packetId;
         // data will not be accessed any more,so we can use this array safely
-        packet.data = in.readBytes(packetLength).array();
+        //packet.data = in.readBytes(packetLength).array();
+        //packet.data = ByteBufUtil.getBytes(in);
+        byte[] bytes = new byte[packetLength];
+        in.readBytes(bytes);
+        packet.data = bytes;
         if (packet.data == null || packet.data.length == 0) {
             logger.error("getDecoder data errorMessage,packetLength=" + packet.packetLength);
         }

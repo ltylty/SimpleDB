@@ -7,8 +7,6 @@ package server.config;
  */
 public interface SystemConfig {
 
-
-
     String Database = "";
     // 36小时内连接不发起请求就干掉 秒为单位
     // long IDLE_TIME_OUT = 36 * 3600 * 1000;

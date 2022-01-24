@@ -7,10 +7,10 @@ import engine.TableStats;
  */
 public class DatabaseInstance {
 
-    private static DatabaseInstance databaseInstance = null;
-    // 默认端口号是8090
+    private static DatabaseInstance databaseInstance;
+    // 默认端口号
     private int serverPort = 8090;
-    // 默认用户名密码是pay|miracle
+    // 默认用户名密码
     private String userName = "pay";
     private String passWd = "123";
 

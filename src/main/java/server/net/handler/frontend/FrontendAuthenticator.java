@@ -1,5 +1,6 @@
 package server.net.handler.frontend;
 
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import server.DatabaseInstance;
 import server.net.proto.mysql.AuthPacket;
 import server.net.proto.mysql.BinaryPacket;
@@ -20,7 +21,7 @@ import java.security.NoSuchAlgorithmException;
  *
  * @Author lizhuyang
  */
-public class FrontendAuthenticator extends ChannelHandlerAdapter {
+public class FrontendAuthenticator extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(FrontendAuthenticator.class);
 
