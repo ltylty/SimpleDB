@@ -1,0 +1,10 @@
+* mysql协议
+  https://callmejiagu.github.io/2018/10/26/%E5%9F%BA%E4%BA%8EMySQL%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE-%E7%BC%96%E5%86%99%E8%87%AA%E5%B7%B1%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E9%A9%B1%E5%8A%A8/
+ https://my.oschina.net/alchemystar?tab=newest&catalogId=5646093&sortType=time 
+** 概述
+ [[file:1.png]]  
+** 登录
+   过程如下[[file:2.png]]   
+** 查询
+* nio
+* netty
