@@ -1,10 +1,24 @@
 * mysql协议
   https://callmejiagu.github.io/2018/10/26/%E5%9F%BA%E4%BA%8EMySQL%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE-%E7%BC%96%E5%86%99%E8%87%AA%E5%B7%B1%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E9%A9%B1%E5%8A%A8/
  https://my.oschina.net/alchemystar?tab=newest&catalogId=5646093&sortType=time 
+ http://hutaow.com/blog/2013/11/06/mysql-protocol-analysis/
+ https://www.cnblogs.com/niuyourou/p/12538546.html
+ https://developer.aliyun.com/article/432862
 ** 概述
+   报文分为消息头和消息体两部分，其中消息头占用固定的4个字节。
+   消息长度用来解决粘包与半包问题问题。
+   第四个字节为了防止串包用。机制是每收到一个报文都在其sequenceId上加1，并随着需要返回的信息返回回去。如果DB检测到sequenceId连续，则表明没有串包。如果不连续，则串包，DB会直接丢弃这个连接。
+   消息体则是最终传递信息的地方
+   报文结构如下：
  [[file:1.png]]  
 ** 登录
-   过程如下[[file:2.png]]   
+   过程如下
+   [[file:2.png]]
+Step1:客户端向DB发起TCP握手。
+Step2:三次握手成功。与通常流程不同的是，由DB发送HandShake信息。这个Packet里面包含了加密seed信息。
+Step3:客户端根据HandShake包里面的加密seed对MySql登录密码进行摘要后，构造Auth认证包发送给DB。
+Step4:DB接收到客户端发过来的Auth包后会对密码摘要进行比对，从而确认是否能够登录。如果能，则发送Okay包返回。
+Step5:客户端与DB的连接至此完毕。
 ** 查询
 * nio
 * netty
