@@ -1,6 +1,5 @@
 * mysql协议
-  https://callmejiagu.github.io/2018/10/26/%E5%9F%BA%E4%BA%8EMySQL%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE-%E7%BC%96%E5%86%99%E8%87%AA%E5%B7%B1%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E9%A9%B1%E5%8A%A8/
- https://my.oschina.net/alchemystar?tab=newest&catalogId=5646093&sortType=time 
+ https://my.oschina.net/alchemystar/blog/833598
  http://hutaow.com/blog/2013/11/06/mysql-protocol-analysis/
  https://www.cnblogs.com/niuyourou/p/12538546.html
  https://developer.aliyun.com/article/432862
@@ -19,6 +18,8 @@ Step2:三次握手成功。与通常流程不同的是，由DB发送HandShake信
 Step3:客户端根据HandShake包里面的加密seed对MySql登录密码进行摘要后，构造Auth认证包发送给DB。
 Step4:DB接收到客户端发过来的Auth包后会对密码摘要进行比对，从而确认是否能够登录。如果能，则发送Okay包返回。
 Step5:客户端与DB的连接至此完毕。
+*** 抓包
+    
 ** 查询
 * nio
 * netty
