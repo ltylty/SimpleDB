@@ -20,6 +20,7 @@ Step4:DB接收到客户端发过来的Auth包后会对密码摘要进行比对�
 Step5:客户端与DB的连接至此完毕。
 *** 抓包
     
-** 查询
+** 查询与返回
+   ResultSet
 * nio
 * netty
