@@ -25,6 +25,7 @@ Step5:客户端与DB的连接至此完毕。
   360是客户端发送的auth包。
   362是服务端发送的auth ok包。
 **** HandShake包内容如下
+     #+begin_example
 3b 00 00 00 //数据长度，3字节
 0a //序号，1字节
 35 2e 31 2e 31 2d 66 72 65 65 64 6f 6d 00 //版本信息，字符串，以\0结尾。内容为5.1.1-freedom
@@ -38,7 +39,9 @@ Step5:客户端与DB的连接至此完毕。
 00 //固定填充0
 00 00 00 00 00 00 00 00 00 00 //固定填充0，10字节
 69 4a 46 6e 39 52 4b 46 67 71 58 76 00 //随机加密串的后半部分，以\0结尾，加密串总共8+12=20字节
+     #+end_example
 **** authentication包内容如下
+     #+begin_example
 39 00 00 //数据长度，3字节
 01 //序号，1字节，同一个动作的所有请求与响应会递增此值
 85 a6 0f 00 //客户端支持的属性，4字节
@@ -48,9 +51,11 @@ Step5:客户端与DB的连接至此完毕。
 70 61 79 00 //用户名，\0结尾的字符串，内容为pay
 14 //密码串长度，1字节，0x14=20字节
 1d ea 47 5b 09 03 13 cf cb bf 6c d3 c3 08 03 bc b9 23 af 81  //密码的加密串，20字节
-
+     #+end_example
 加密算法如下
+#+begin_verse
 SHA1(password) XOR SHA1("20-bytes random data from server" <concat> SHA1(SHA1(password)))
+#+end_verse
 具体实现为
 #+begin_src java
   public static final byte[] scramble411(byte[] pass, byte[] seed) throws NoSuchAlgorithmException {
