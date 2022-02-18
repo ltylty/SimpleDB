@@ -1,8 +1,4 @@
 * mysql协议
- https://my.oschina.net/alchemystar/blog/833598
- http://hutaow.com/blog/2013/11/06/mysql-protocol-analysis/
- https://www.cnblogs.com/niuyourou/p/12538546.html
- https://developer.aliyun.com/article/432862
 ** 概述
    报文分为消息头和消息体两部分，其中消息头占用固定的4个字节。
    消息长度用来解决粘包与半包问题问题。
@@ -20,13 +16,15 @@ Step3:客户端根据HandShake包里面的加密seed对MySql登录密码进行�
 Step4:DB接收到客户端发过来的Auth包后会对密码摘要进行比对，从而确认是否能够登录。如果能，则发送Okay包返回。
 Step5:客户端与DB的连接至此完毕。
    #+end_example
-*** 抓包
-  [[file:3.png]]  
-  353，354，355三个报文是客户端与服务端建立tcp连接。
-  358是服务端发送的HandShake包。
-  360是客户端发送的auth包。
-  362是服务端发送的auth ok包。
-**** HandShake包内容如下
+** 登录抓包分析
+ [[file:3.png]]  
+ #+begin_example
+ 353，354，355三个报文是客户端与服务端建立tcp连接。
+ 358是服务端发送的HandShake包。
+ 360是客户端发送的auth包。
+ 362是服务端发送的auth ok包。
+ #+end_example
+*** HandShake包内容如下
      #+begin_example
 3b 00 00 00 //数据长度，3字节
 0a //序号，1字节
@@ -42,7 +40,7 @@ Step5:客户端与DB的连接至此完毕。
 00 00 00 00 00 00 00 00 00 00 //固定填充0，10字节
 69 4a 46 6e 39 52 4b 46 67 71 58 76 00 //随机加密串的后半部分，以\0结尾，加密串总共8+12=20字节
      #+end_example
-**** authentication包内容如下
+*** authentication包内容如下
      #+begin_example
 39 00 00 //数据长度，3字节
 01 //序号，1字节，同一个动作的所有请求与响应会递增此值
@@ -74,7 +72,7 @@ SHA1(password) XOR SHA1("20-bytes random data from server" <concat> SHA1(SHA1(pa
         return pass3;
     }
 #+end_src
-**** auth ok
+*** auth ok
      #+begin_example
 07 00 00 //数据长度，3字节  
 02 //序号，1字节，在上一个包的基础上又+1了
@@ -86,5 +84,10 @@ SHA1(password) XOR SHA1("20-bytes random data from server" <concat> SHA1(SHA1(pa
      #+end_example
 ** 查询与返回
    ResultSet
+** 参考
+ https://my.oschina.net/alchemystar/blog/833598
+ http://hutaow.com/blog/2013/11/06/mysql-protocol-analysis/
+ https://www.cnblogs.com/niuyourou/p/12538546.html
+ https://developer.aliyun.com/article/432862
 * nio
 * netty
