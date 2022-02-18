@@ -78,12 +78,8 @@
     00 //LastInsertId，变长数值
     02 00 //状态，2字节
     00 00 //消息
-## 查询与返回
-ResultSet
 ## 参考
 https://my.oschina.net/alchemystar/blog/833598  
 http://hutaow.com/blog/2013/11/06/mysql-protocol-analysis/  
 https://www.cnblogs.com/niuyourou/p/12538546.html  
 https://developer.aliyun.com/article/432862  
-# netty
-

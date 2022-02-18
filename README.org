@@ -46,5 +46,5 @@ select * from authors where id = 141801;
 
 * 实现过程
 1. 完成数据库作业cs186,也就实现了数据存储层和sql解析优化层，实现细节[[file:doc/cs186.org]]。代码在engine包中。
-2. 加上mysql网络协议层,协议层借鉴了[[https://github.com/alchemystar/Freedom][Freedom]]。代码在server包中。
+2. 加上mysql网络协议层,协议分析[[file:doc/protocol.md]],协议层借鉴了[[https://github.com/alchemystar/Freedom][Freedom]]。代码在server包中。
      
