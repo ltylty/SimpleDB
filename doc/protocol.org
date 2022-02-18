@@ -13,11 +13,13 @@
 ** 登录
    过程如下
    [[file:2.png]]
+   #+begin_example
 Step1:客户端向DB发起TCP握手。
 Step2:三次握手成功。与通常流程不同的是，由DB发送HandShake信息。这个Packet里面包含了加密seed信息。
 Step3:客户端根据HandShake包里面的加密seed对MySql登录密码进行摘要后，构造Auth认证包发送给DB。
 Step4:DB接收到客户端发过来的Auth包后会对密码摘要进行比对，从而确认是否能够登录。如果能，则发送Okay包返回。
 Step5:客户端与DB的连接至此完毕。
+   #+end_example
 *** 抓包
   [[file:3.png]]  
   353，354，355三个报文是客户端与服务端建立tcp连接。
@@ -53,9 +55,9 @@ Step5:客户端与DB的连接至此完毕。
 1d ea 47 5b 09 03 13 cf cb bf 6c d3 c3 08 03 bc b9 23 af 81  //密码的加密串，20字节
      #+end_example
 加密算法如下
-#+begin_verse
+#+begin_example
 SHA1(password) XOR SHA1("20-bytes random data from server" <concat> SHA1(SHA1(password)))
-#+end_verse
+#+end_example
 具体实现为
 #+begin_src java
   public static final byte[] scramble411(byte[] pass, byte[] seed) throws NoSuchAlgorithmException {
