@@ -1,5 +1,5 @@
-cs186是伯克利大学数据库作业,实现一个简单的数据库。主页：https://sites.google.com/site/cs186fall2013/homeworks。 作业已经提供了框架，按照说明一步步完成具体的功能就行。
-作业中文件下载链接已经失效，可以在这个仓库找到https://github.com/zjsyhjh/ucb-cs186。
+cs186是伯克利大学数据库作业,实现一个简单的数据库。主页：https://sites.google.com/site/cs186fall2013/homeworks 。 作业已经提供了框架，按照说明一步步完成具体的功能就行。
+作业中文件下载链接已经失效，可以在这个仓库找到https://github.com/zjsyhjh/ucb-cs186 。
 * Project 1
 原项目使用ant，我改成了maven。
 几个关键类的介绍：
