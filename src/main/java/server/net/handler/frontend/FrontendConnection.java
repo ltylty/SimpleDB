@@ -182,9 +182,6 @@ public class FrontendConnection {
         setLastActiveTime();
     }
 
-    private void doQuery(String sql, int type) {
-
-    }
 
     public String getCharset() {
         return charset;
@@ -201,9 +198,6 @@ public class FrontendConnection {
         }
     }
 
-    public void txResponse() {
-
-    }
 
     public FrontendQueryHandler getQueryHandler() {
         return queryHandler;
