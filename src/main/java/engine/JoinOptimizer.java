@@ -113,7 +113,18 @@ public class JoinOptimizer {
             // join.
 
             // joincost(t1 join t2) = scancost(t1) + ntups(t1) x scancost(t2) //IO cost + ntups(t1) x ntups(t2)  //CPU cost
-            return cost1 + card1 * cost2 + card1 * card2;
+
+            // 针对NestedLoopJoin
+//            return cost1 + card1 * cost2 + card1 * card2;
+
+            //针对BlockNestedLoopJoin
+            TupleDesc desc = p.getTupleDesc(j.t1Alias);
+            int blockSize = Join.blockMemory / desc.getSize();
+            int fullNum = card1 / blockSize;
+            int left = (card1 - blockSize * fullNum) == 0 ? 0 : 1;
+            int blockCard = fullNum + left;//得到左表被分成多少个缓冲区
+            double cost = cost1 + blockCard * cost2 + (double) card1 * (double) card2;
+            return cost;
         }
     }
 
@@ -311,12 +322,14 @@ public class JoinOptimizer {
                 .clone();
         news.remove(j);
 
-        double t1cost, t2cost;
+        double t1cost, t2cost, cost = 0;
         int t1card, t2card;
         boolean leftPkey, rightPkey;
+        boolean leftInPreBest = false, rightInPreBest = false;
 
         if (news.isEmpty()) { // base case -- both are base relations
-            prevBest = new Vector<LogicalJoinNode>();
+            //移除一个join之后就为null，说明传入的joinSet只含有一个join
+            prevBest = new Vector<>();
             t1cost = stats.get(table1Name).estimateScanCost();
             t1card = stats.get(table1Name).estimateTableCardinality(
                     filterSelectivities.get(j.t1Alias));
@@ -327,15 +340,15 @@ public class JoinOptimizer {
             t2card = table2Alias == null ? 0 : stats.get(table2Name)
                     .estimateTableCardinality(
                             filterSelectivities.get(j.t2Alias));
-            rightPkey = table2Alias == null ? false : isPkey(table2Alias,
-                    j.f2PureName);
-        } else {
+            rightPkey = table2Alias != null && isPkey(table2Alias, j.f2PureName);
+        } else {//移除一个join后不为空则joinSet里面的join大于等于2
             // news is not empty -- figure best way to join j to news
-            prevBest = pc.getOrder(news);
+            prevBest = pc.getOrder(news);//从plan缓存中获取left-deep-tree的最佳plan
 
             // possible that we have not cached an answer, if subset
             // includes a cross product
             if (prevBest == null) {
+                //如果pc中没有对应的最佳plan，说明这个左树没有最佳plan，就不用继续为其加一个join节点了
                 return null;
             }
 
@@ -343,10 +356,12 @@ public class JoinOptimizer {
             int bestCard = pc.getCard(news);
 
             // estimate cost of right subtree
-            if (doesJoin(prevBest, table1Alias)) { // j.t1 is in prevBest
+            leftInPreBest = doesJoin(prevBest, table1Alias);
+            rightInPreBest = doesJoin(prevBest, table2Alias);
+            //为了保证生成的是left-deep-tree，必须保证新加入的join节点的左表或右表在左树中存在
+            //即保证新加入的join能按照left-deep-tree的形式与左树拼接起来
+            if (leftInPreBest || rightInPreBest) {//
                 t1cost = prevBestCost; // left side just has cost of whatever
-                                       // left
-                // subtree is
                 t1card = bestCard;
                 leftPkey = hasPkey(prevBest);
 
@@ -355,50 +370,52 @@ public class JoinOptimizer {
                 t2card = j.t2Alias == null ? 0 : stats.get(table2Name)
                         .estimateTableCardinality(
                                 filterSelectivities.get(j.t2Alias));
-                rightPkey = j.t2Alias == null ? false : isPkey(j.t2Alias,
-                        j.f2PureName);
-            } else if (doesJoin(prevBest, j.t2Alias)) { // j.t2 is in prevbest
-                                                        // (both
-                // shouldn't be)
-                t2cost = prevBestCost; // left side just has cost of whatever
-                                       // left
-                // subtree is
-                t2card = bestCard;
-                rightPkey = hasPkey(prevBest);
-
-                t1cost = stats.get(table1Name).estimateScanCost();
-                t1card = stats.get(table1Name).estimateTableCardinality(
-                        filterSelectivities.get(j.t1Alias));
-                leftPkey = isPkey(j.t1Alias, j.f1PureName);
-
-            } else {
+                rightPkey = j.t2Alias != null && isPkey(j.t2Alias, j.f2PureName);
+            } else {//无法生成left-deep-tree则返回null
                 // don't consider this plan if one of j.t1 or j.t2
                 // isn't a table joined in prevBest (cross product)
                 return null;
             }
         }
 
-        // case where prevbest is left
-        double cost1 = estimateJoinCost(j, t1card, t2card, t1cost, t2cost);
-
-        LogicalJoinNode j2 = j.swapInnerOuter();
-        double cost2 = estimateJoinCost(j2, t2card, t1card, t2cost, t1cost);
-        if (cost2 < cost1) {
+        //计算得到cost
+        //注意在后面left-deep-tree成型之后，新加进来的join的顺序其实是固定的，即下面的两种else if的情况
+        if (prevBest.size() == 0) {//如果树还未成型，允许对新加的join调整其inner和outer
+            double cost1 = estimateJoinCost(j, t1card, t2card, t1cost, t2cost);
+            cost = cost1;
+            LogicalJoinNode j2 = j.swapInnerOuter();
+            double cost2 = estimateJoinCost(j2, t2card, t1card, t2cost, t1cost);
+            if (cost2 < cost1) {//如果交换inner和outer之后代价更小
+                j = j2;
+                cost = cost2;
+                boolean tmp = rightPkey;
+                rightPkey = leftPkey;
+                leftPkey = tmp;
+                int tmp1 = t2card;
+                t2card = t1card;
+                t1card = tmp1;
+            }
+        } else if (leftInPreBest) {//如果树已经成型，而且新加进来的join的左表在树中
+            cost = estimateJoinCost(j, t1card, t2card, t1cost, t2cost);
+        } else if (rightInPreBest) {//如果树已经成型，而且新加进来的join的右表在树中
+            LogicalJoinNode j2 = j.swapInnerOuter();
+            cost = estimateJoinCost(j2, t2card, t1card, t2cost, t1cost);
             boolean tmp;
             j = j2;
-            cost1 = cost2;
             tmp = rightPkey;
             rightPkey = leftPkey;
             leftPkey = tmp;
+            int tmp1 = t2card;
+            t2card = t1card;
+            t1card = tmp1;
         }
-        if (cost1 >= bestCostSoFar)
+        if (cost >= bestCostSoFar)
             return null;
-
         CostCard cc = new CostCard();
 
         cc.card = estimateJoinCardinality(j, t1card, t2card, leftPkey,
                 rightPkey, stats);
-        cc.cost = cost1;
+        cc.cost = cost;
         cc.plan = (Vector<LogicalJoinNode>) prevBest.clone();
         cc.plan.addElement(j); // prevbest is left -- add new join to end
         return cc;
@@ -579,4 +596,123 @@ public class JoinOptimizer {
 
     }
 
+
+    private CostCard computeCostAndCardOfSubplanBak(
+            HashMap<String, TableStats> stats,
+            HashMap<String, Double> filterSelectivities,
+            LogicalJoinNode joinToRemove, Set<LogicalJoinNode> joinSet,
+            double bestCostSoFar, PlanCache pc) throws ParsingException {
+
+        LogicalJoinNode j = joinToRemove;
+
+        Vector<LogicalJoinNode> prevBest;
+
+        if (this.p.getTableId(j.t1Alias) == null)
+            throw new ParsingException("Unknown table " + j.t1Alias);
+        if (this.p.getTableId(j.t2Alias) == null)
+            throw new ParsingException("Unknown table " + j.t2Alias);
+
+        String table1Name = Database.getCatalog().getTableName(
+                this.p.getTableId(j.t1Alias));
+        String table2Name = Database.getCatalog().getTableName(
+                this.p.getTableId(j.t2Alias));
+        String table1Alias = j.t1Alias;
+        String table2Alias = j.t2Alias;
+
+        Set<LogicalJoinNode> news = (Set<LogicalJoinNode>) ((HashSet<LogicalJoinNode>) joinSet)
+                .clone();
+        news.remove(j);
+
+        double t1cost, t2cost;
+        int t1card, t2card;
+        boolean leftPkey, rightPkey;
+
+        if (news.isEmpty()) { // base case -- both are base relations
+            prevBest = new Vector<LogicalJoinNode>();
+            t1cost = stats.get(table1Name).estimateScanCost();
+            t1card = stats.get(table1Name).estimateTableCardinality(
+                    filterSelectivities.get(j.t1Alias));
+            leftPkey = isPkey(j.t1Alias, j.f1PureName);
+
+            t2cost = table2Alias == null ? 0 : stats.get(table2Name)
+                    .estimateScanCost();
+            t2card = table2Alias == null ? 0 : stats.get(table2Name)
+                    .estimateTableCardinality(
+                            filterSelectivities.get(j.t2Alias));
+            rightPkey = table2Alias == null ? false : isPkey(table2Alias,
+                    j.f2PureName);
+        } else {
+            // news is not empty -- figure best way to join j to news
+            prevBest = pc.getOrder(news);
+
+            // possible that we have not cached an answer, if subset
+            // includes a cross product
+            if (prevBest == null) {
+                return null;
+            }
+
+            double prevBestCost = pc.getCost(news);
+            int bestCard = pc.getCard(news);
+
+            // estimate cost of right subtree
+            if (doesJoin(prevBest, table1Alias)) { // j.t1 is in prevBest
+                t1cost = prevBestCost; // left side just has cost of whatever
+                // left
+                // subtree is
+                t1card = bestCard;
+                leftPkey = hasPkey(prevBest);
+
+                t2cost = j.t2Alias == null ? 0 : stats.get(table2Name)
+                        .estimateScanCost();
+                t2card = j.t2Alias == null ? 0 : stats.get(table2Name)
+                        .estimateTableCardinality(
+                                filterSelectivities.get(j.t2Alias));
+                rightPkey = j.t2Alias == null ? false : isPkey(j.t2Alias,
+                        j.f2PureName);
+            } else if (doesJoin(prevBest, j.t2Alias)) { // j.t2 is in prevbest
+                // (both
+                // shouldn't be)
+                t2cost = prevBestCost; // left side just has cost of whatever
+                // left
+                // subtree is
+                t2card = bestCard;
+                rightPkey = hasPkey(prevBest);
+
+                t1cost = stats.get(table1Name).estimateScanCost();
+                t1card = stats.get(table1Name).estimateTableCardinality(
+                        filterSelectivities.get(j.t1Alias));
+                leftPkey = isPkey(j.t1Alias, j.f1PureName);
+
+            } else {
+                // don't consider this plan if one of j.t1 or j.t2
+                // isn't a table joined in prevBest (cross product)
+                return null;
+            }
+        }
+
+        // case where prevbest is left
+        double cost1 = estimateJoinCost(j, t1card, t2card, t1cost, t2cost);
+
+        LogicalJoinNode j2 = j.swapInnerOuter();
+        double cost2 = estimateJoinCost(j2, t2card, t1card, t2cost, t1cost);
+        if (cost2 < cost1) {
+            boolean tmp;
+            j = j2;
+            cost1 = cost2;
+            tmp = rightPkey;
+            rightPkey = leftPkey;
+            leftPkey = tmp;
+        }
+        if (cost1 >= bestCostSoFar)
+            return null;
+
+        CostCard cc = new CostCard();
+
+        cc.card = estimateJoinCardinality(j, t1card, t2card, leftPkey,
+                rightPkey, stats);
+        cc.cost = cost1;
+        cc.plan = (Vector<LogicalJoinNode>) prevBest.clone();
+        cc.plan.addElement(j); // prevbest is left -- add new join to end
+        return cc;
+    }
 }

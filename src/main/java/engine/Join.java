@@ -19,7 +19,8 @@ public class Join extends Operator {
 
     private TupleIterator joinResults;
 
-    private int blockMemory = 131072*5;
+    // 131072是MySql中BlockNestedLoopJoin算法的默认缓冲区大小（以字节为单位）
+    public static final int blockMemory = 131072;
 
     /**
      * Constructor. Accepts to children to join and the predicate to join them
@@ -82,8 +83,8 @@ public class Join extends Operator {
     	super.open();
 
         //joinResults = nestedLoopJoin();
-        //joinResults = blockNestedLoopJoin();
-        joinResults = dbnlSortedJoin();
+        joinResults = blockNestedLoopJoin();
+        //joinResults = dbnlSortedJoin();
         joinResults.open();
     }
 
@@ -176,6 +177,13 @@ public class Join extends Operator {
         return new TupleIterator(getTupleDesc(), tuples);
     }
 
+    /**
+     * 对左表做缓存<br/>
+     * 相对于普通的NL算法，能够减少内表的磁盘IO次数
+     *
+     * @throws TransactionAbortedException
+     * @throws DbException
+     */
     private TupleIterator blockNestedLoopJoin() throws DbException, TransactionAbortedException {
         List<Tuple> tuples = new LinkedList<>();
         int blockSize = blockMemory / child1.getTupleDesc().getSize();//131072是MySql中该算法的默认缓冲区大小
