@@ -61,6 +61,7 @@ public class BufferPool {
         long start = System.currentTimeMillis();
         while (!hasLock) {
             if (System.currentTimeMillis() - start > 300) {
+                // todo 死锁检测
                 throw new TransactionAbortedException();
             }
             try {
@@ -77,6 +78,7 @@ public class BufferPool {
             page = file.readPage(pid);
 
             /* my code for proj2 */
+            // todo lru cache
             if (pagesCacheMap.size() >= numPages) {
                 /* random evictPage */
                 for (PageId pageId : pagesCacheMap.keySet()) {

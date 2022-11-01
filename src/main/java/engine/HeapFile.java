@@ -134,6 +134,7 @@ public class HeapFile implements DbFile {
         }
         //
         if (pageList.isEmpty()) {
+            // 所有的页都满了，创建新的页。
             PageId pid = new HeapPageId(getId(), numPages());
             try {
                 byte[] bytes = HeapPage.createEmptyPageData();

@@ -386,6 +386,7 @@ public class Parser {
             newTups = new TupleArrayIterator(tups);
 
         } else {
+            // insert into select
             ZQuery zq = (ZQuery) s.getQuery();
             LogicalPlan lp = parseQueryLogicalPlan(tId, zq);
             newTups = lp.physicalPlan(tId, TableStats.getStatsMap(), explain);
