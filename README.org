@@ -9,12 +9,12 @@ SELECT p.title
 FROM papers p
 WHERE p.title LIKE 'selectivity';
 
-SELECT p.title, v.name
-FROM papers p, authors a, paperauths pa, venues v
-WHERE a.name = 'E. F. Codd'
-AND pa.authorid = a.id
-AND pa.paperid = p.id
-AND p.venueid = v.id;
+SELECT a.title, d.name
+FROM papers a, authors b, paperauths c, venues d
+WHERE b.name = 'E. F. Codd'
+AND c.authorid = b.id
+AND c.paperid = a.id
+AND a.venueid = d.id;
  
 SELECT a2.name, count(p.id)
 FROM papers p, authors a1, authors a2, paperauths pa1, paperauths pa2

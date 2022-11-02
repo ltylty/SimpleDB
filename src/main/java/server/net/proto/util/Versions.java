@@ -8,5 +8,5 @@ public interface Versions {
     byte PROTOCOL_VERSION = 10;
 
     /** 服务器版本 */
-    byte[] SERVER_VERSION = "5.1.1-freedom".getBytes();
+    byte[] SERVER_VERSION = "simpledb-0.1".getBytes();
 }

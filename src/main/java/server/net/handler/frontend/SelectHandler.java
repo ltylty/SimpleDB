@@ -22,6 +22,9 @@ public final class SelectHandler {
             case ServerParseSelect.DATABASE:
                 SelectDatabase.response(c);
                 break;
+            case ServerParseSelect.VERSION_COMMENT:
+                SelectVersionComment.response(c);
+                break;
             case ServerParseSelect.VERSION:
                 SelectVersion.response(c);
                 break;

@@ -115,16 +115,16 @@ public class JoinOptimizer {
             // joincost(t1 join t2) = scancost(t1) + ntups(t1) x scancost(t2) //IO cost + ntups(t1) x ntups(t2)  //CPU cost
 
             // 针对NestedLoopJoin
-//            return cost1 + card1 * cost2 + card1 * card2;
+            return cost1 + card1 * cost2 + card1 * card2;
 
             //针对BlockNestedLoopJoin
-            TupleDesc desc = p.getTupleDesc(j.t1Alias);
+            /*TupleDesc desc = p.getTupleDesc(j.t1Alias);
             int blockSize = Join.blockMemory / desc.getSize();
             int fullNum = card1 / blockSize;
             int left = (card1 - blockSize * fullNum) == 0 ? 0 : 1;
             int blockCard = fullNum + left;//得到左表被分成多少个缓冲区
             double cost = cost1 + blockCard * cost2 + (double) card1 * (double) card2;
-            return cost;
+            return cost;*/
         }
     }
 

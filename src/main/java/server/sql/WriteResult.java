@@ -43,6 +43,7 @@ public class WriteResult implements BiConsumer<Tuple, WriteResultBO> {
         // rows
         if (con != null) {
             List<String> values = new ArrayList<>();
+            // values代表一行数据。一行数据有多个字段。
             Iterator<Field> fieldIterator = tup.fields();
             while (fieldIterator.hasNext()) {
                 values.add(fieldIterator.next().toString());
