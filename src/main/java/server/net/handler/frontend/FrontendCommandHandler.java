@@ -55,7 +55,7 @@ public class FrontendCommandHandler extends ChannelInboundHandlerAdapter {
                 source.kill(bin.data);
                 break;
             case MySQLPacket.COM_STMT_PREPARE:
-                // todo prepare支持,参考MyCat
+                // todo prepare支持
                 source.stmtPrepare(bin.data);
                 break;
             case MySQLPacket.COM_STMT_EXECUTE:

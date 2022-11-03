@@ -343,6 +343,7 @@ public class SqlParser {
         int i = 0;
         DbIterator newTups;
 
+        // 将SQL语句中的values转为tuples
         if (s.getValues() != null) {
             @SuppressWarnings("unchecked")
             Vector<ZExp> values = (Vector<ZExp>) s.getValues();
