@@ -36,6 +36,7 @@ public class MySqlPacketDecoder extends ByteToMessageDecoder {
      */
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        // 防粘包、半包
         // 4 bytes:3 length + 1 packetId
         if (in.readableBytes() < packetHeaderSize) {
             return;
