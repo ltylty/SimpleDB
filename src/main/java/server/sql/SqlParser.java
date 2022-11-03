@@ -9,7 +9,7 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
-public class Parser {
+public class SqlParser {
     static boolean explain = false;
 
     public static Predicate.Op getOp(String s) throws ParsingException {

@@ -348,6 +348,7 @@ public class LogicalPlan {
 
         joins = jo.orderJoins(statsMap,filterSelectivities,explain);
 
+        // subplanMap经过覆盖和移除，最终只保留一个元素。即树的根节点。
         Iterator<LogicalJoinNode> joinIt = joins.iterator();
         while (joinIt.hasNext()) {
             LogicalJoinNode lj = joinIt.next();
@@ -408,6 +409,7 @@ public class LogicalPlan {
         
         DbIterator node =  (DbIterator)(subplanMap.entrySet().iterator().next().getValue());
 
+        // 记录要查询的字段
         //walk the select list, to determine order in which to project output fields
         ArrayList<Integer> outFields = new ArrayList<Integer>();
         ArrayList<Type> outTypes = new ArrayList<Type>();
