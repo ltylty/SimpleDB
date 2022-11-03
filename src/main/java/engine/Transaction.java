@@ -43,14 +43,14 @@ public class Transaction {
     public void transactionComplete(boolean abort) throws IOException {
 
         if (started) {
-            //write commit / abort records
+            /*//write commit / abort records
             if (abort) {
                 Database.getLogFile().logAbort(tid); //does rollback too
             } else {
                 //write all the dirty pages for this transaction out
                 Database.getBufferPool().flushPages(tid);
                 Database.getLogFile().logCommit(tid);
-            }
+            }*/
 
             try {
 
